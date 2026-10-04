@@ -85,8 +85,14 @@ export function createDemoState() {
       { id: 'health-5', petId: 'pet-nori', type: 'weight', date: '2026-09-14', value: 9.2 },
     ],
     vaccines: [
-      { id: 'vaccine-1', petId: 'pet-momo', name: '猫三联', date: '2026-01-12', nextDate: '2026-09-22', hospital: '和煦动物医院', notes: '年度加强针' },
-      { id: 'vaccine-2', petId: 'pet-nori', name: '狂犬疫苗', date: '2025-10-08', nextDate: '2026-10-08', hospital: '森屿宠物诊所', notes: '' },
+      { id: 'vaccine-1', petId: 'pet-momo', name: '猫三联', category: '疫苗', date: '2026-01-12', nextDate: '2026-09-22', hospital: '和煦动物医院', notes: '年度加强针' },
+      { id: 'vaccine-2', petId: 'pet-nori', name: '狂犬疫苗', category: '疫苗', date: '2025-10-08', nextDate: '2026-10-08', hospital: '森屿宠物诊所', notes: '' },
+      { id: 'vaccine-3', petId: 'pet-nori', name: '体内驱虫', category: '驱虫', date: '2026-06-28', nextDate: '2026-09-28', hospital: '森屿宠物诊所', notes: '季度驱虫' },
+    ],
+    vaccineHistory: [
+      { id: 'history-1', petId: 'pet-momo', name: '猫三联', category: '疫苗', date: '2025-01-10', hospital: '和煦动物医院', notes: '年度加强针' },
+      { id: 'history-2', petId: 'pet-nori', name: '狂犬疫苗', category: '疫苗', date: '2024-10-05', hospital: '森屿宠物诊所', notes: '' },
+      { id: 'history-3', petId: 'pet-momo', name: '体外驱虫', category: '驱虫', date: '2026-07-02', hospital: '', notes: '滴剂，每月一次' },
     ],
     medications: [
       { id: 'med-1', petId: 'pet-momo', name: '益生菌', dose: '1包', frequency: '每日 1 次', startDate: '2026-09-15', endDate: '2026-09-21', notes: '随餐喂食' },

@@ -3,9 +3,9 @@ import { computed, ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import { activityTypes, normalRanges, todayISO } from '../data'
 
-const props = defineProps({ visible: Boolean, type: { type: String, default: 'health' }, pets: { type: Array, default: () => [] } })
+const props = defineProps({ visible: Boolean, type: { type: String, default: 'health' }, pets: { type: Array, default: () => [] }, vaccine: { type: Object, default: null } })
 const emit = defineEmits(['close', 'submit'])
-const title = computed(() => ({ health: '记录健康指标', vaccine: '添加疫苗计划', medication: '添加用药计划', feeding: '设置喂食计划', activity: '记录一次活动' }[props.type]))
+const title = computed(() => ({ health: '记录健康指标', vaccine: '添加疫苗计划', medication: '添加用药计划', feeding: '设置喂食计划', activity: '记录一次活动', completeVaccine: '标记疫苗完成' }[props.type]))
 const form = ref({})
 const defaults = {
   health: () => ({ petId: props.pets[0]?.id || '', type: 'weight', date: todayISO(), value: '' }),
@@ -13,18 +13,21 @@ const defaults = {
   medication: () => ({ petId: props.pets[0]?.id || '', name: '', dose: '', frequency: '每日 1 次', startDate: todayISO(), endDate: '', notes: '' }),
   feeding: () => ({ petId: props.pets[0]?.id || '', food: '主粮', brand: '', times: 2, portion: '' }),
   activity: () => ({ petId: props.pets[0]?.id || '', date: todayISO(), duration: '', type: '散步', location: '', notes: '' }),
+  completeVaccine: () => ({ date: todayISO(), nextDate: '', hospital: props.vaccine?.hospital || '', notes: '' }),
 }
+const vaccinePetName = computed(() => props.pets.find((pet) => pet.id === props.vaccine?.petId)?.name || '')
 function reset() { form.value = defaults[props.type]() }
 function submit() {
   const payload = { ...form.value }
   if (props.type === 'health') { payload.value = Number(payload.value); payload.type = payload.type }
   if (props.type === 'activity') payload.duration = Number(payload.duration)
-  emit('submit', { collection: { health: 'healthRecords', vaccine: 'vaccines', medication: 'medications', feeding: 'feedings', activity: 'activities' }[props.type], payload })
+  emit('submit', { collection: { health: 'healthRecords', vaccine: 'vaccines', medication: 'medications', feeding: 'feedings', activity: 'activities', completeVaccine: 'completeVaccine' }[props.type], payload })
   reset()
 }
 reset()
 watch(() => props.type, reset)
 watch(() => props.pets.length, reset)
+watch(() => props.vaccine, () => { if (props.type === 'completeVaccine') reset() })
 </script>
 
 <template>
@@ -32,7 +35,8 @@ watch(() => props.pets.length, reset)
     <section class="modal compact-modal">
       <header class="modal-header"><div><span class="eyebrow">添加记录</span><h2>{{ title }}</h2></div><button class="icon-btn" @click="emit('close')"><X :size="18" /></button></header>
       <form class="form-grid single-column" @submit.prevent="submit">
-        <label>关联宠物<select v-model="form.petId"><option v-for="pet in pets" :key="pet.id" :value="pet.id">{{ pet.name }}</option></select></label>
+        <div v-if="type === 'completeVaccine' && vaccine" class="complete-target"><strong>{{ vaccine.category || '疫苗' }} · {{ vaccine.name }}</strong><span>{{ vaccinePetName }} · 上次接种 {{ vaccine.date || '--' }} · 原定到期 {{ vaccine.nextDate || '--' }}</span></div>
+        <label v-else>关联宠物<select v-model="form.petId"><option v-for="pet in pets" :key="pet.id" :value="pet.id">{{ pet.name }}</option></select></label>
         <template v-if="type === 'health'">
           <label>指标类型<select v-model="form.type"><option value="weight">体重（kg）</option><option value="temperature">体温（°C）</option><option value="heartRate">心率（bpm）</option></select></label>
           <label>测量日期<input v-model="form.date" type="date" required /></label><label>数值<input v-model="form.value" type="number" step="0.1" required placeholder="输入数值" /></label>
@@ -46,10 +50,13 @@ watch(() => props.pets.length, reset)
         <template v-else-if="type === 'feeding'">
           <label>食物类型<select v-model="form.food"><option>主粮</option><option>罐头</option><option>零食</option><option>营养品</option></select></label><label>品牌<input v-model="form.brand" required placeholder="例如：渴望六种鱼" /></label><div class="two-fields"><label>每日次数<input v-model="form.times" type="number" min="1" max="8" /></label><label>每次份量<input v-model="form.portion" placeholder="例如：35g" /></label></div>
         </template>
+        <template v-else-if="type === 'completeVaccine'">
+          <div class="two-fields"><label>接种日期<input v-model="form.date" type="date" required /></label><label>下次接种（选填）<input v-model="form.nextDate" type="date" /></label></div><label>医院名称<input v-model="form.hospital" placeholder="选填" /></label><label>备注<textarea v-model="form.notes" rows="2" placeholder="选填"></textarea></label><p class="form-hint">保存后该疫苗将从待接种列表移除，并保留在下方的接种记录中；填写下次接种日期可继续提醒。</p>
+        </template>
         <template v-else>
           <div class="two-fields"><label>活动日期<input v-model="form.date" type="date" required /></label><label>活动时长（分钟）<input v-model="form.duration" type="number" min="1" required /></label></div><label>活动类型<select v-model="form.type"><option v-for="item in activityTypes" :key="item">{{ item }}</option></select></label><label>地点<input v-model="form.location" placeholder="例如：江滨公园" /></label><label>备注<textarea v-model="form.notes" rows="2"></textarea></label>
         </template>
-        <footer class="modal-actions"><button type="button" class="btn btn-quiet" @click="emit('close')">取消</button><button class="btn btn-primary" type="submit">保存记录</button></footer>
+        <footer class="modal-actions"><button type="button" class="btn btn-quiet" @click="emit('close')">取消</button><button class="btn btn-primary" type="submit">{{ type === 'completeVaccine' ? '确认完成' : '保存记录' }}</button></footer>
       </form>
     </section>
   </div>
